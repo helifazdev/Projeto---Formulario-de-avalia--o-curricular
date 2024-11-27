@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Formulário de Candidatos</title>
+    <style>
+        label { display: block; margin-top: 10px; }
+        .button { margin-top: 20px; }
+        footer { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Formulário de Candidatos</h1>
+    <form action="{{ url_for('submit') }}" method="post">
+        <label>Nome do candidato:</label>
+        <input type="text" name="nome" value="{{ candidato.nome }}" readonly>
+
+        <label>Número de inscrição:</label>
+        <input type="text" name="numero" value="{{ candidato.inscricao }}" readonly>
+
+        <label>Avaliação curricular:</label>
+        {% for avaliacao in ['Especializacao', 'Mestrado', 'Doutorado', 'Nao possui'] %}
+            <input type="radio" name="avaliacao" value="{{ avaliacao }}" {% if candidato.avaliacao == avaliacao %} checked {% endif %}>
+            <label>{{ avaliacao }}</label>
+        {% endfor %}
+
+        <div id="justificativa-div" style="{% if candidato.avaliacao != 'Nao possui' %} display: none; {% endif %}">
+            <label>Justificativa:</label>
+            {% for justificativa in ['Nao enviou documentacao', 'Documentacao ilegivel', 'Documentacao invalida'] %}
+                <input type="radio" name="justificativa" value="{{ justificativa }}" {% if candidato.justificativa == justificativa %} checked {% endif %}>
+                <label>{{ justificativa }}</label>
+            {% endfor %}
+        </div>
+
+        <label>Observações:</label>
+        <textarea name="observacoes">{{ candidato.observacao }}</textarea>
+
+        <div class="button">
+            <button type="submit">Enviar e Próximo</button>
+        </div>
+    </form>
+
+    <form action="{{ url_for('anterior') }}" method="post" class="button">
+        <button type="submit">Anterior</button>
+    </form>
+
+    <footer>
+        <p>Candidato {{ atual }} de {{ total }} | Data: {{ data }}</p>
+    </footer>
+
+    <script>
+        document.querySelector('input[name="avaliacao"][value="Nao possui"]').addEventListener('change', function() {
+            document.getElementById('justificativa-div').style.display = 'block';
+        });
+        document.querySelectorAll('input[name="avaliacao"]:not([value="Nao possui"])').forEach(function(element) {
+            element.addEventListener('change', function() {
+                document.getElementById('justificativa-div').style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
