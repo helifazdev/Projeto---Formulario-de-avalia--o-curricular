@@ -50,6 +50,9 @@ indice_atual = 0
 pontuacoes = {"Especializacao": 40, "Mestrado": 60, "Doutorado": 10, "Nao possui": 0}
 total_candidatos = len(candidatos)
 data_hoje = datetime.now().strftime("%d/%m/%Y")
+#Tipo de ordenação
+candidatos.sort(key=lambda x: (x["nome"], x["cargo"]))
+
 
 # Função para atualizar o formulário com os dados do candidato atual
 def atualizar_formulario():
@@ -78,51 +81,69 @@ def atualizar_formulario():
         messagebox.showinfo("Fim", "Todos os candidatos foram analisados.")
         root.quit()
 
-
-
 # Função para salvar as informações dos candidatos
-def submit():
+def salvar_candidato_atual():
     global indice_atual
-    candidato_id = indice_atual + 1
- # Dados pessoais do candidato
-    nome = nome_entry.cget("text")
-    numero = numero_entry.cget("text")
-    cargo = cargo_entry.cget("text")
-        
- # Dados a serem analisados
-    requisito = requisito_var.get()
-    avaliacao = avaliacao_var.get()
-    observacoes = observacoes_text.get("1.0", tk.END).strip()
-    pontuacao = pontuacoes.get(avaliacao, 0)
-       
-    justificativa = justificativa_var.get() if avaliacao == "Nao possui" else ""
+    candidato = candidatos[indice_atual]
+    candidato["requisito"] = requisito_var.get()
+    candidato["avaliacao"] = avaliacao_var.get()
+    candidato["observacao"] = observacoes_text.get("1.0", tk.END).strip()
+    candidato["justificativa"] = justificativa_var.get() if avaliacao_var.get() == "Nao possui" else ""
 
-    salvar_informacoes(candidato_id, nome, numero, cargo, requisito, avaliacao, justificativa, observacoes, pontuacao)
+    # Função para validar o formulário
+def validar_formulario():
+    if not requisito_var.get():
+        messagebox.showerror("Erro", "Por favor, selecione se o candidato possui requisitos para o cargo.")
+        return False
+    if not avaliacao_var.get():
+        messagebox.showerror("Erro", "Por favor, selecione a avaliação curricular.")
+        return False
+    if avaliacao_var.get() == "Nao possui" and not justificativa_var.get():
+        messagebox.showerror("Erro", "Por favor, forneça uma justificativa para a avaliação 'Não possui'.")
+        return False
+    return True
 
-    messagebox.showinfo("Informações", f"Nome do candidato: {nome}\nNúmero de inscrição: {numero}\nCargo: {cargo}\nPossui requisito? {requisito}\nAvaliação curricular: {avaliacao}\nJustificativa: {justificativa}\nObservações: {observacoes}\nPontuação: {pontuacao}")
- 
 # Função para avançar para o próximo candidato
 def proximo():
     global indice_atual
-    resposta = messagebox.askquestion("Confirmação", "Deseja enviar o atual?")
-    if resposta == 'yes':
-        submit()
-        submit_button.config(state="normal")
+    if validar_formulario():
+        salvar_candidato_atual()
+        if requisito_var.get() == "Nao":
+            messagebox.showinfo("Eliminado", "Esse candidato já está eliminado de acordo com item 5.2.6 do Edital, mas vamos continuar a análise!")
         if indice_atual < len(candidatos) - 1:
             indice_atual += 1
             atualizar_formulario()
-    elif resposta == 'no':
-        if indice_atual < len(candidatos) - 1:
-            indice_atual += 1
-            atualizar_formulario()
+        else:
+            finalizar_analise()
 
-
-# Função para voltar para o candidato anterior
+# Função para voltar ao candidato anterior
 def anterior():
     global indice_atual
+    salvar_candidato_atual()
     if indice_atual > 0:
         indice_atual -= 1
         atualizar_formulario()
+
+# Função para finalizar a análise
+def finalizar_analise():
+    # Exibir mensagem de conclusão
+    messagebox.showinfo("Concluído", "Análise finalizada. Todas as informações foram salvas.")
+    
+    # Chamar função para processar e salvar informações
+    for i, candidato in enumerate(candidatos):
+        salvar_informacoes(
+            i + 1, 
+            candidato.get("nome"), 
+            candidato.get("inscricao"), 
+            candidato.get("cargo"), 
+            candidato.get("requisito"), 
+            candidato.get("avaliacao"), 
+            candidato.get("justificativa", ""), 
+            candidato.get("observacao", ""), 
+            pontuacoes.get(candidato.get("avaliacao"), 0)
+        )
+    
+    root.quit()
 
 
 # Criando a janela principal
@@ -214,9 +235,6 @@ anterior_button.grid(row=15, column=0, padx=0, pady=0)
 proximo_button = tk.Button(root, text="Próximo", command=proximo)
 proximo_button.grid(row=15, column=1, padx=0, pady=0)
 
-# Botão para enviar os dados
-submit_button = tk.Button(root, text="Enviar", command=submit)
-submit_button.grid(row=16, column=3, padx=10, pady=10)
 
 # Inicializando o formulário com o primeiro candidato
 atualizar_formulario()
